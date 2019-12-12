@@ -49,6 +49,10 @@
 #include <openssl/bn.h>
 #include <openssl/ossl_typ.h>
 
+// in order to add GlobalPlatform API support
+#include <tee_internal_api.h>
+#include "TpmToGpSupport_fp.h"
+
 //***************************************************************
 //** Links to the OpenSSL AES code
 //***************************************************************
@@ -69,7 +73,7 @@ typedef void(*TpmCryptSetSymKeyCall_t)(
     void *keySchedule
     );
 
-// The Crypt functions that call the block encryption function use the parameters 
+// The Crypt functions that call the block encryption function use the parameters
 // in the order:
 //  1) keySchedule
 //  2) in buffer
@@ -82,10 +86,15 @@ typedef void(*TpmCryptSetSymKeyCall_t)(
 // Macros to set up the encryption/decryption key schedules
 //
 // AES:
-#define TpmCryptSetEncryptKeyAES(key, keySizeInBits, schedule)            \
+/*#define TpmCryptSetEncryptKeyAES(key, keySizeInBits, schedule)            \
     AES_set_encrypt_key((key), (keySizeInBits), (tpmKeyScheduleAES *)(schedule))
 #define TpmCryptSetDecryptKeyAES(key, keySizeInBits, schedule)            \
     AES_set_decrypt_key((key), (keySizeInBits), (tpmKeyScheduleAES *)(schedule))
+*/
+#define TpmCryptSetEncryptKeyAES(key, keySizeInBits, schedule)            \
+    AES_set_encrypt_key_GP((key), (keySizeInBits), (tpmKeyScheduleAES *)(schedule))
+#define TpmCryptSetDecryptKeyAES(key, keySizeInBits, schedule)            \
+    AES_set_decrypt_key_GP((key), (keySizeInBits), (tpmKeyScheduleAES *)(schedule))
 
 // TDES:
 #define TpmCryptSetEncryptKeyTDES(key, keySizeInBits, schedule)            \
@@ -95,17 +104,22 @@ typedef void(*TpmCryptSetSymKeyCall_t)(
 
 // Macros to alias encryption calls to specific algorithms. This should be used
 // sparingly. Currently, only used by CryptRand.c
-// 
-// When using these calls, to call the AES block encryption code, the caller 
+//
+// When using these calls, to call the AES block encryption code, the caller
 // should use:
 //      TpmCryptEncryptAES(SWIZZLE(keySchedule, in, out));
-#define TpmCryptEncryptAES          AES_encrypt
-#define TpmCryptDecryptAES          AES_decrypt
-#define tpmKeyScheduleAES           AES_KEY
+
+// *** Swap ossl calls with Gp calls
+//#define TpmCryptEncryptAES          AES_encrypt
+//#define TpmCryptDecryptAES          AES_decrypt
+//#define tpmKeyScheduleAES           AES_KEY
+#define TpmCryptEncryptAES          AES_encrypt_GP
+#define TpmCryptDecryptAES          AES_decrypt_GP
+#define tpmKeyScheduleAES           TEE_OperationHandle
 
 
 #define TpmCryptEncryptTDES         TDES_encrypt
-#define TpmCryptDecryptTDES         TDES_decrypt 
+#define TpmCryptDecryptTDES         TDES_decrypt
 #define tpmKeyScheduleTDES          DES_key_schedule
 
 typedef union tpmCryptKeySchedule_t tpmCryptKeySchedule_t;

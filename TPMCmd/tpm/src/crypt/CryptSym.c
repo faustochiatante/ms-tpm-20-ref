@@ -100,7 +100,7 @@ CryptGetSymmetricBlockSize(
 {
     const INT16    *sizes;
     INT16            i;
-#define ALG_CASE(SYM, sym)  case ALG_##SYM##_VALUE: sizes = sym##KeyBlockSizes; break 
+#define ALG_CASE(SYM, sym)  case ALG_##SYM##_VALUE: sizes = sym##KeyBlockSizes; break
     switch(symmetricAlg)
     {
 #if ALG_AES
@@ -124,7 +124,7 @@ CryptGetSymmetricBlockSize(
         if(*sizes == keySizeInBits)
             break;
     }
-    // If sizes is pointing at the end of the list of key sizes, then the desired 
+    // If sizes is pointing at the end of the list of key sizes, then the desired
     // key size was not found so set the block size to zero.
     if(*sizes++ < 0)
         return 0;
@@ -171,6 +171,9 @@ CryptSymmetricEncrypt(
 
     TEST(algorithm);
     blockSize = CryptGetSymmetricBlockSize(algorithm, keySizeInBits);
+
+    IMSG("*** BLOCK SIZE %u\n", blockSize);
+
     if(blockSize == 0)
         return TPM_RC_FAILURE;
     // If the iv is provided, then it is expected to be block sized. In some cases,
@@ -282,6 +285,9 @@ CryptSymmetricEncrypt(
         default:
             return TPM_RC_FAILURE;
     }
+
+    if (algorithm == TPM_ALG_AES)
+        TEE_FreeOperation(&keySchedule.AES);
     return TPM_RC_SUCCESS;
 }
 
@@ -452,6 +458,8 @@ CryptSymmetricDecrypt(
         default:
             return TPM_RC_FAILURE;
     }
+    if (algorithm == TPM_ALG_AES)
+        TEE_FreeOperation(&keySchedule.AES);
     return TPM_RC_SUCCESS;
 }
 
@@ -474,5 +482,3 @@ CryptSymKeyValidate(
 #endif // ALG_TDES
     return TPM_RC_SUCCESS;
 }
-
-
